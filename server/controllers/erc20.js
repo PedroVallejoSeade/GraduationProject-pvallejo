@@ -5,19 +5,6 @@ const path = require( 'path' );
 const uniqid = require('uniqid'); 
 
 const erc20Get = (req = request, res = response) => {
-    
-    // exec("truffle migrate", (error, stdout, stderr) => {
-    //     if (error) {
-    //         console.log(`error: ${error.message}`);
-    //         return;
-    //     }
-    //     if (stderr) {
-    //         console.log(`stderr: ${stderr}`);
-    //         return;
-    //     }
-    //     console.log(`stdout: ${stdout}`);
-    // });
-    
     res.json({
         msg : 'get API - controller'
     });
@@ -49,11 +36,11 @@ const erc20Post = (req = request, res = response) => {
     fs.writeFile(path.join(__dirname, '..', 'migrations', '1_deploy_contracts.js'), deployementFile, (err) => {
         if (err) throw err;
 
-        console.log(`${new Date().toISOString}:`,`The deployement file in order to deploy the token ${name} was succesfully updated`);
+        console.log(`${new Date().toISOString()}:`,`The deployement file in order to deploy the token ${name} was succesfully updated`);
         fs.writeFile(path.join(__dirname, '..', 'contracts', `${fileName}.sol`), contractTemplate, (err) => {
             if (err) throw err;
     
-            console.log(`${new Date().toISOString}:`,`The solidity file for the token ${name} was succesfully written`);
+            console.log(`${new Date().toISOString()}:`,`The solidity file for the token ${name} was succesfully written`);
         });
     });
     
