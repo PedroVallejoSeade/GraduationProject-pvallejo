@@ -4,6 +4,8 @@ const fs = require( 'fs' );
 const path = require( 'path' );
 const uniqid = require('uniqid'); 
 
+const { FILE_CREATION, FILE_UPDATE, SUCCESS, ERROR, oneLineConsoleMessage, multiLineConsoleMessage } = require('../services/console-events');
+
 /**
  * --------------------------------------------------------------------------------
  * ERC-20 ENDPOINT CONTROLLERS
@@ -125,14 +127,14 @@ function erc20ContractTemplate(name, symbol, tokenAmount) {
 function createERC20FilesAndDeployContract(tokenName, contractFileName, deployementFile, contractFile) {
     fs.writeFile(path.join(__dirname, '..', 'migrations', '1_deploy_contracts.js'), deployementFile, (err) => {
         if (err) {
-            console.log(`FILE-CREATION/ERROR:[${new Date().toISOString()}]:`,
+            multiLineConsoleMessage(FILE_UPDATE,
+                ERROR,
                 `The solidity file for the token ${tokenName} could not be written due to the error shown below`,
-                `\t${err.message}`);
+                `${err.message}`)
 
             return;
         }
-
-        console.log(`FILE-CREATION/SUCCESS[${new Date().toISOString()}]:`,`The deployement file in order to deploy the token ${tokenName} was succesfully updated`);
+        oneLineConsoleMessage(FILE_UPDATE, SUCCESS, `The deployement file in order to deploy the token ${tokenName} was succesfully updated`);
         
         createContractFile(tokenName, contractFileName, contractFile)
     });
@@ -147,16 +149,17 @@ function createERC20FilesAndDeployContract(tokenName, contractFileName, deployem
 function createContractFile(tokenName, contractFileName, contractFile){
     fs.writeFile(path.join(__dirname, '..', 'contracts', `${contractFileName}.sol`), contractFile, (err) => {
         if (err) {
-            console.log(`FILE-CREATION/ERROR:[${new Date().toISOString()}]:`,
+            multiLineConsoleMessage(FILE_CREATION,
+                ERROR,
                 `The solidity file for the token ${tokenName} could not be created due to the error shown below`,
-                `\t${err.message}`);
-            
+                `${err.message}`)
+
             return;
         }
 
         // deployContract();
 
-        console.log(`FILE-CREATION/SUCCESS:[${new Date().toISOString()}]:`,`The solidity file for the token ${tokenName} was succesfully written`);
+        oneLineConsoleMessage(FILE_CREATION, SUCCESS, `The solidity file for the token ${tokenName} was succesfully written`);
     });
 }
 
