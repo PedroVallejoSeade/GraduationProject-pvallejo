@@ -29,7 +29,7 @@ const erc20Put = (req = request, res = response) => {
 }
 
 const erc20Post = (req = request, res = response) => {
-    const body = req.body;
+    const { name, symbol, tokenAmount } = req.body;
 
     const contractTemplate =
     `// SPDX-License-Identifier: MIT\n` +
@@ -37,9 +37,11 @@ const erc20Post = (req = request, res = response) => {
     `\n` +
     `import "@openzeppelin/contracts/token/ERC20/ERC20.sol";\n` +
     `\n` +
-    `contract MyToken is ERC20 {\n` +
-    `    constructor() ERC20("MyToken", "MTK") {}\n` +
-    `}`
+    `contract ${name} is ERC20 {\n` +
+    `    constructor() ERC20("${name}", "${symbol}") {\n` +
+    `        _mint(msg.sender, ${tokenAmount} * 10 ** decimals());\n` +
+    `    }\n` +
+    `}`;
 
     fs.writeFile(path.join(__dirname, '..', 'contracts', 'MyToken.sol'), contractTemplate, (err) => {
         if (err) throw err;
@@ -48,8 +50,7 @@ const erc20Post = (req = request, res = response) => {
     })
     
     res.json({
-        msg : 'post API - controller',
-        body : body
+        msg : `The token ${name} with the symbol ${symbol} has been created with a total amount of ${tokenAmount} tokens`
     });
 }
 
