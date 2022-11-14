@@ -2,6 +2,7 @@ const { request, response } = require( 'express' );
 const { exec } = require( 'child_process' );
 const fs = require( 'fs' );
 const path = require( 'path' );
+const uniqid = require('uniqid'); 
 
 const erc20Get = (req = request, res = response) => {
     
@@ -43,7 +44,9 @@ const erc20Post = (req = request, res = response) => {
     `    }\n` +
     `}`;
 
-    fs.writeFile(path.join(__dirname, '..', 'contracts', 'MyToken.sol'), contractTemplate, (err) => {
+    const fileName = `${uniqid()}`
+
+    fs.writeFile(path.join(__dirname, '..', 'contracts', `${fileName}.sol`), contractTemplate, (err) => {
         if (err) throw err;
 
         console.log('Write complete')
