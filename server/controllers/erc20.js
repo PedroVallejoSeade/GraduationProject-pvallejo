@@ -46,7 +46,7 @@ const erc20Post = (req = request, res = response) => {
 
     const fileName = `${uniqid()}`
 
-    fs.writeFile(path.join(__dirname, '..', 'contracts', `${fileName}.sol`), contractTemplate, (err) => {
+    fs.writeFile(path.join(__dirname, '..', 'contracts', `ERC-20:${fileName}.sol`), contractTemplate, (err) => {
         if (err) throw err;
 
         console.log('Write complete')
