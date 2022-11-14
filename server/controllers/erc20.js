@@ -4,12 +4,28 @@ const fs = require( 'fs' );
 const path = require( 'path' );
 const uniqid = require('uniqid'); 
 
+/**
+ * --------------------------------------------------------------------------------
+ * ERC-20 ENDPOINT CONTROLLERS
+ * --------------------------------------------------------------------------------
+ */
+
+/**
+ * Controller function for a get request [CURRENTLY HAS NO USE]
+ * @param {*} req Request object
+ * @param {*} res Response object
+ */
 const erc20Get = (req = request, res = response) => {
     res.json({
         msg : 'get API - controller'
     });
 }
 
+/**
+ * Controller function for a put request [CURRENTLY HAS NO USE]
+ * @param {*} req Request object
+ * @param {*} res Response object
+ */
 const erc20Put = (req = request, res = response) => {
     res.json({
         msg : 'put API - controller'
@@ -26,23 +42,15 @@ const erc20Post = (req = request, res = response) => {
     const { name, symbol, tokenAmount } = req.body;
 
     // Filename for the solidity contract
-    const fileName = `ERC-20:${uniqid()}`;
+    const contractFileName = `ERC-20:${uniqid()}`;
 
     // Templates needed for deployement and contract creation
-    const deployementFile = deployementFileTemplate(name, fileName);
-    const contractTemplate = erc20ContractTemplate(name, symbol, tokenAmount);
+    const deployementFile = deployementFileTemplate(name, contractFileName);
+    const contractFile = erc20ContractTemplate(name, symbol, tokenAmount);
 
-    // Creation of the needed files
-    fs.writeFile(path.join(__dirname, '..', 'migrations', '1_deploy_contracts.js'), deployementFile, (err) => {
-        if (err) throw err;
-
-        console.log(`${new Date().toISOString()}:`,`The deployement file in order to deploy the token ${name} was succesfully updated`);
-        fs.writeFile(path.join(__dirname, '..', 'contracts', `${fileName}.sol`), contractTemplate, (err) => {
-            if (err) throw err;
+    // Creation of the needed files and deployement of contract
+    createERC20FilesAndDeployContract(name, contractFileName, deployementFile, contractFile);
     
-            console.log(`${new Date().toISOString()}:`,`The solidity file for the token ${name} was succesfully written`);
-        });
-    });
     
     // Response of the server
     res.json({
@@ -50,6 +58,11 @@ const erc20Post = (req = request, res = response) => {
     });
 }
 
+/**
+ * Controller function for a delete request [CURRENTLY HAS NO USE]
+ * @param {*} req Request object
+ * @param {*} res Response object
+ */
 const erc20Delete = (req = request, res = response) => {
     res.json({
         msg : 'delete API'
@@ -57,14 +70,20 @@ const erc20Delete = (req = request, res = response) => {
 }
 
 /**
+ * --------------------------------------------------------------------------------
+ * HELPER FUNCTIONS
+ * --------------------------------------------------------------------------------
+ */
+
+/**
  * Creates a string for a deployement file from a template and the parameters specified
  * @param {*} tokenName The name of the token
- * @param {*} fileName  The name of the file where the solidity contract is stored
+ * @param {*} contractFileName  The name of the file where the solidity contract is stored
  * @returns A string with the content of the deployement file
  */
-function deployementFileTemplate(tokenName, fileName){
+function deployementFileTemplate(tokenName, contractFileName){
     const deploymentFile =
-    `const ${tokenName} = artifacts.require("${fileName}");\n` +
+    `const ${tokenName} = artifacts.require("${contractFileName}");\n` +
     `\n` +
     `module.exports = function (deployer) {\n` +
     `  deployer.deploy(${tokenName});\n` +
@@ -80,7 +99,7 @@ function deployementFileTemplate(tokenName, fileName){
  * @param {*} tokenAmount The ammount of tokens
  * @returns 
  */
-function erc20ContractTemplate(name, symbol, tokenAmount){
+function erc20ContractTemplate(name, symbol, tokenAmount) {
     const contract =
     `// SPDX-License-Identifier: MIT\n` +
     `pragma solidity ^0.8.9;\n` +
@@ -95,6 +114,68 @@ function erc20ContractTemplate(name, symbol, tokenAmount){
 
     return contract;
 }
+
+/**
+ * Creates the deployement and contract files for an ERC-20 token and also deploys the contract created
+ * @param {*} tokenName The name of the token being created
+ * @param {*} contractFileName The name of the file for the contract
+ * @param {*} deployementFile The content of the deployement file
+ * @param {*} contractFile The content of the contract file
+ */
+function createERC20FilesAndDeployContract(tokenName, contractFileName, deployementFile, contractFile) {
+    fs.writeFile(path.join(__dirname, '..', 'migrations', '1_deploy_contracts.js'), deployementFile, (err) => {
+        if (err) {
+            console.log(`FILE-CREATION/ERROR:[${new Date().toISOString()}]:`,
+                `The solidity file for the token ${tokenName} could not be written due to the error shown below`,
+                `\t${err.message}`);
+
+            return;
+        }
+
+        console.log(`FILE-CREATION/SUCCESS[${new Date().toISOString()}]:`,`The deployement file in order to deploy the token ${tokenName} was succesfully updated`);
+        
+        createContractFile(tokenName, contractFileName, contractFile)
+    });
+}
+
+/**
+ * Creates the contract file for the Token
+ * @param {*} tokenName Name of the token being created
+ * @param {*} contractFileName Name of the file for the contract being created
+ * @param {*} contractFile Content of the contract file
+ */
+function createContractFile(tokenName, contractFileName, contractFile){
+    fs.writeFile(path.join(__dirname, '..', 'contracts', `${contractFileName}.sol`), contractFile, (err) => {
+        if (err) {
+            console.log(`FILE-CREATION/ERROR:[${new Date().toISOString()}]:`,
+                `The solidity file for the token ${tokenName} could not be created due to the error shown below`,
+                `\t${err.message}`);
+            
+            return;
+        }
+
+        // deployContract();
+
+        console.log(`FILE-CREATION/SUCCESS:[${new Date().toISOString()}]:`,`The solidity file for the token ${tokenName} was succesfully written`);
+    });
+}
+
+/**
+ * Runs the script in order to deploy contracts
+ */
+// function deployContract() {
+//     exec("truffle migrate", (error, stdout, stderr) => {
+//         if (error) {
+//             console.log(`error: ${error.message}`);
+//             return;
+//         }
+//         if (stderr) {
+//             console.log(`stderr: ${stderr}`);
+//             return;
+//         }
+//         console.log(`stdout: ${stdout}`);
+//     });
+// }
 
 module.exports = {
     erc20Get,
