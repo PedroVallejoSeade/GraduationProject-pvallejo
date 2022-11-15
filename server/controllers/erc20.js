@@ -5,6 +5,7 @@ const path = require( 'path' );
 const uniqid = require('uniqid'); 
 
 const { FILE_CREATION, FILE_UPDATE, SUCCESS, ERROR, oneLineConsoleMessage, multiLineConsoleMessage } = require('../services/console-events');
+const { pushElementInDatabase } = require('../services/database.js');
 
 /**
  * --------------------------------------------------------------------------------
@@ -54,8 +55,7 @@ const erc20Post = (req = request, res = response) => {
 
     // Creation of the needed files and deployement of contract
     createERC20FilesAndDeployContract(name, contractFileName, deployementFile, contractFile);
-    
-    
+
     // Response of the server
     res.json({
         msg : `The token ${name} with the symbol ${symbol} has been created with a total amount of ${tokenAmount} tokens`
