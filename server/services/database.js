@@ -25,7 +25,7 @@ const setDatabase = (newDatabase) => {
  * @returns The instance of the element searched in the database if found or undefined if not found
  */
 const searchElementOnDatabase = (elemetSearched) => {
-    return database.find(element => element == elemetSearched);
+    return database.find(element => (element.name == elemetSearched.name || element.symbol == elemetSearched.symbol));
 }
 
 /**

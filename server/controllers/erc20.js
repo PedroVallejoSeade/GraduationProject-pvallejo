@@ -4,7 +4,7 @@ const fs = require( 'fs' );
 const path = require( 'path' );
 
 const { FILE_CREATION, FILE_UPDATE, TRUFFLE_MIGRATION, SUCCESS, ERROR, oneLineConsoleMessage, multiLineConsoleMessage } = require('../services/console-events');
-const { pushElementInDatabase } = require('../services/database.js');
+const { pushElementInDatabase, getDatabase } = require('../services/database.js');
 
 /**
  * --------------------------------------------------------------------------------
@@ -18,8 +18,6 @@ const { pushElementInDatabase } = require('../services/database.js');
  * @param {*} res Response object
  */
 const erc20Get = (req = request, res = response) => {
-    deployContract();
-
     res.json({
         msg : 'get API - controller'
     });
@@ -46,7 +44,15 @@ const erc20Post = (req = request, res = response) => {
     // Request body
     const { name, symbol, tokenAmount } = req.body;
 
-    if(pushElementInDatabase(name)){
+    const tokenObj = {
+        standard : 'ERC-20',
+        name : name,
+        symbol : symbol,
+        amount : tokenAmount,
+        contractDeployed : false
+    }
+
+    if(pushElementInDatabase(tokenObj)){
         // Templates needed for deployement and contract creation
         const deployementFile = deployementFileTemplate(name);
         const contractFile = erc20ContractTemplate(name, symbol, tokenAmount);
@@ -71,6 +77,8 @@ const erc20Post = (req = request, res = response) => {
             key : 'DUPLICATE_TOKEN_NAME'
         });
     }
+
+    console.log(getDatabase());
 }
 
 /**
