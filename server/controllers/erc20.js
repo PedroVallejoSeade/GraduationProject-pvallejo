@@ -18,6 +18,8 @@ const { FILE_CREATION, FILE_UPDATE, SUCCESS, ERROR, oneLineConsoleMessage, multi
  * @param {*} res Response object
  */
 const erc20Get = (req = request, res = response) => {
+    deployContract();
+
     res.json({
         msg : 'get API - controller'
     });
@@ -47,7 +49,7 @@ const erc20Post = (req = request, res = response) => {
     const contractFileName = `ERC-20:${uniqid()}`;
 
     // Templates needed for deployement and contract creation
-    const deployementFile = deployementFileTemplate(name, contractFileName);
+    const deployementFile = deployementFileTemplate(name);
     const contractFile = erc20ContractTemplate(name, symbol, tokenAmount);
 
     // Creation of the needed files and deployement of contract
@@ -80,12 +82,11 @@ const erc20Delete = (req = request, res = response) => {
 /**
  * Creates a string for a deployement file from a template and the parameters specified
  * @param {*} tokenName The name of the token
- * @param {*} contractFileName  The name of the file where the solidity contract is stored
  * @returns A string with the content of the deployement file
  */
-function deployementFileTemplate(tokenName, contractFileName){
+function deployementFileTemplate(tokenName){
     const deploymentFile =
-    `const ${tokenName} = artifacts.require("${contractFileName}");\n` +
+    `const ${tokenName} = artifacts.require("${tokenName}");\n` +
     `\n` +
     `module.exports = function (deployer) {\n` +
     `  deployer.deploy(${tokenName});\n` +
@@ -166,19 +167,26 @@ function createContractFile(tokenName, contractFileName, contractFile){
 /**
  * Runs the script in order to deploy contracts
  */
-// function deployContract() {
-//     exec("truffle migrate", (error, stdout, stderr) => {
-//         if (error) {
-//             console.log(`error: ${error.message}`);
-//             return;
-//         }
-//         if (stderr) {
-//             console.log(`stderr: ${stderr}`);
-//             return;
-//         }
-//         console.log(`stdout: ${stdout}`);
-//     });
-// }
+function deployContract() {
+    console.log('DEBUG:', '1');
+    exec("truffle migrate", (error, stdout, stderr) => {
+        if (error) {
+            console.log('DEBUG:', '2');
+            console.log(`error: ${error.message}`);
+            console.log('DEBUG:', '3');
+            return;
+        }
+        if (stderr) {
+            console.log('DEBUG:', '4');
+            console.log(`stderr: ${stderr}`);
+            console.log('DEBUG:', '5');
+            return;
+        }
+        console.log('DEBUG:', '6');
+        console.log(`stdout: ${stdout}`);
+        console.log('DEBUG:', '7');
+    });
+}
 
 module.exports = {
     erc20Get,
