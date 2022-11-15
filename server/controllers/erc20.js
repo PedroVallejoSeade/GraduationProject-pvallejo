@@ -46,20 +46,26 @@ const erc20Post = (req = request, res = response) => {
     // Request body
     const { name, symbol, tokenAmount } = req.body;
 
-    // Filename for the solidity contract
-    const contractFileName = `ERC-20:${uniqid()}`;
-
     // Templates needed for deployement and contract creation
     const deployementFile = deployementFileTemplate(name);
     const contractFile = erc20ContractTemplate(name, symbol, tokenAmount);
 
     // Creation of the needed files and deployement of contract
-    createERC20FilesAndDeployContract(name, contractFileName, deployementFile, contractFile);
+    createERC20FilesAndDeployContract(name, deployementFile, contractFile);
 
     // Response of the server
-    res.json({
-        msg : `The token ${name} with the symbol ${symbol} has been created with a total amount of ${tokenAmount} tokens`
+    res.status(201).json({
+        msg : 'Success',
+        key : 'SUCCESS'
     });
+
+    // res.status(406).json({
+    //     msg : 'falure'
+    // });
+
+    // res.status(500).json({
+    //     msg : 'falure'
+    // });
 }
 
 /**
@@ -121,11 +127,10 @@ function erc20ContractTemplate(name, symbol, tokenAmount) {
 /**
  * Creates the deployement and contract files for an ERC-20 token and also deploys the contract created
  * @param {*} tokenName The name of the token being created
- * @param {*} contractFileName The name of the file for the contract
  * @param {*} deployementFile The content of the deployement file
  * @param {*} contractFile The content of the contract file
  */
-function createERC20FilesAndDeployContract(tokenName, contractFileName, deployementFile, contractFile) {
+function createERC20FilesAndDeployContract(tokenName, deployementFile, contractFile) {
     fs.writeFile(path.join(__dirname, '..', 'migrations', '1_deploy_contracts.js'), deployementFile, (err) => {
         if (err) {
             multiLineConsoleMessage(FILE_UPDATE,
@@ -137,18 +142,17 @@ function createERC20FilesAndDeployContract(tokenName, contractFileName, deployem
         }
         oneLineConsoleMessage(FILE_UPDATE, SUCCESS, `The deployement file in order to deploy the token ${tokenName} was succesfully updated`);
         
-        createContractFile(tokenName, contractFileName, contractFile)
+        createContractFile(tokenName, contractFile)
     });
 }
 
 /**
  * Creates the contract file for the Token
  * @param {*} tokenName Name of the token being created
- * @param {*} contractFileName Name of the file for the contract being created
  * @param {*} contractFile Content of the contract file
  */
-function createContractFile(tokenName, contractFileName, contractFile){
-    fs.writeFile(path.join(__dirname, '..', 'contracts', `${contractFileName}.sol`), contractFile, (err) => {
+function createContractFile(tokenName, contractFile){
+    fs.writeFile(path.join(__dirname, '..', 'contracts', `${tokenName}.sol`), contractFile, (err) => {
         if (err) {
             multiLineConsoleMessage(FILE_CREATION,
                 ERROR,
