@@ -58,19 +58,12 @@ const erc20Post = (req = request, res = response) => {
         const contractFile = erc20ContractTemplate(name, symbol, tokenAmount);
 
         // Creation of the needed files and deployement of contract
-        const succesfulOperation = createERC20FilesAndDeployContract(name, deployementFile, contractFile);
+        createERC20FilesAndDeployContract(name, deployementFile, contractFile);
 
-        if(succesfulOperation){
-            res.status(201).json({
-                msg : 'Success',
-                key : 'SUCCESS'
-            });
-        } else {
-            res.status(500).json({
-                msg : 'The server could was not able to correctly create the token',
-                key : 'UNKNOWN_PROBLEM'
-            });
-        }
+        res.status(201).json({
+            msg : `The token ${name} was succesfully created in the database`,
+            key : 'SUCCESS'
+        });
     } else {
         res.status(406).json({
             msg : `There is already a token with the name ${name}`,
@@ -142,7 +135,6 @@ function erc20ContractTemplate(name, symbol, tokenAmount) {
  * @param {*} tokenName The name of the token being created
  * @param {*} deployementFile The content of the deployement file
  * @param {*} contractFile The content of the contract file
- * @return True if the operation was completed succesfully, false otherwise
  */
 function createERC20FilesAndDeployContract(tokenName, deployementFile, contractFile) {
     fs.writeFile(path.join(__dirname, '..', 'migrations', '1_deploy_contracts.js'), deployementFile, (err) => {
@@ -150,13 +142,13 @@ function createERC20FilesAndDeployContract(tokenName, deployementFile, contractF
             multiLineConsoleMessage(FILE_UPDATE,
                 ERROR,
                 `The solidity file for the token ${tokenName} could not be written due to the error shown below`,
-                `${err.message}`)
+                `${err.message}`);
 
-            return false;
+            return ;
         }
         oneLineConsoleMessage(FILE_UPDATE, SUCCESS, `The deployement file in order to deploy the token ${tokenName} was succesfully updated`);
         
-        return createContractFile(tokenName, contractFile)
+        createContractFile(tokenName, contractFile);
     });
 }
 
@@ -172,14 +164,14 @@ function createContractFile(tokenName, contractFile){
             multiLineConsoleMessage(FILE_CREATION,
                 ERROR,
                 `The solidity file for the token ${tokenName} could not be created due to the error shown below`,
-                `${err.message}`)
+                `${err.message}`);
 
-            return false;
+            return;
         }
 
         oneLineConsoleMessage(FILE_CREATION, SUCCESS, `The solidity file for the token ${tokenName} was succesfully written`);
 
-        return deployContract(tokenName);
+        deployContract(tokenName);
     });
 }
 
@@ -195,26 +187,24 @@ function deployContract(tokenName) {
                 ERROR,
                 `The error shown below ocurred while trying to run 'trufle migrate' command for deploying ` +
                 `the token with the name: ${tokenName}`,
-                `${error}`)
+                `${error}`);
 
-            return false;
+            return;
         }
         if (stderr) {
             multiLineConsoleMessage(TRUFFLE_MIGRATION,
                 SUCCESS,
                 `The command 'truffle migrations was succesfully runned for deploying the token with the name: ` +
                 `${tokenName} and obtained the shell stream shown below'`,
-                `${stderr}`)
+                `${stderr}`);
 
-            return true;
+            return;
         }
         multiLineConsoleMessage(TRUFFLE_MIGRATION,
             SUCCESS,
             `The command 'truffle migrations was succesfully runned for deploying the token with the name: ` +
             `${tokenName} and obtained the shell output shown below'`,
-            `${stdout}`)
-
-        return true;
+            `${stdout}`);
     });
 }
 
