@@ -6,6 +6,7 @@
 
 const FILE_CREATION = 'FILE-CREATION';
 const FILE_UPDATE = 'FILE-UPDATE';
+const TRUFFLE_MIGRATION = 'TRUFFLE-MIGRATION'
 
 /**
  * --------------------------------------------------------------------------------
@@ -33,13 +34,19 @@ const oneLineConsoleMessage = (eventClass, eventType, message) => {
 }
 
 const multiLineConsoleMessage = (eventClass, eventType, shortMessage, longMessage) => {
-    console.log(`\n`,`${eventClass}/${eventType}:[${new Date().toISOString()}]:`, shortMessage, `\n`, longMessage, `\n`);
+    console.log(`\n`,
+        `${eventClass}/${eventType}:[${new Date().toISOString()}]:`,
+        shortMessage,
+        `\n--------------------- beginning\n`,
+        `\n${longMessage}`,
+        `\n--------------------- ending`);
 }
 
 module.exports = {
     // Event classes constants
     FILE_CREATION,
     FILE_UPDATE,
+    TRUFFLE_MIGRATION,
 
     // Event types constants
     SUCCESS,

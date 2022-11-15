@@ -3,7 +3,7 @@ const { exec } = require( 'child_process' );
 const fs = require( 'fs' );
 const path = require( 'path' );
 
-const { FILE_CREATION, FILE_UPDATE, SUCCESS, ERROR, oneLineConsoleMessage, multiLineConsoleMessage } = require('../services/console-events');
+const { FILE_CREATION, FILE_UPDATE, TRUFFLE_MIGRATION, SUCCESS, ERROR, oneLineConsoleMessage, multiLineConsoleMessage } = require('../services/console-events');
 const { pushElementInDatabase } = require('../services/database.js');
 
 /**
@@ -46,26 +46,31 @@ const erc20Post = (req = request, res = response) => {
     // Request body
     const { name, symbol, tokenAmount } = req.body;
 
-    // Templates needed for deployement and contract creation
-    const deployementFile = deployementFileTemplate(name);
-    const contractFile = erc20ContractTemplate(name, symbol, tokenAmount);
+    if(pushElementInDatabase(name)){
+        // Templates needed for deployement and contract creation
+        const deployementFile = deployementFileTemplate(name);
+        const contractFile = erc20ContractTemplate(name, symbol, tokenAmount);
 
-    // Creation of the needed files and deployement of contract
-    createERC20FilesAndDeployContract(name, deployementFile, contractFile);
+        // Creation of the needed files and deployement of contract
+        const succesfulOperation = createERC20FilesAndDeployContract(name, deployementFile, contractFile);
 
-    // Response of the server
-    res.status(201).json({
-        msg : 'Success',
-        key : 'SUCCESS'
-    });
-
-    // res.status(406).json({
-    //     msg : 'falure'
-    // });
-
-    // res.status(500).json({
-    //     msg : 'falure'
-    // });
+        if(succesfulOperation){
+            res.status(201).json({
+                msg : 'Success',
+                key : 'SUCCESS'
+            });
+        } else {
+            res.status(500).json({
+                msg : 'The server could was not able to correctly create the token',
+                key : 'UNKNOWN_PROBLEM'
+            });
+        }
+    } else {
+        res.status(406).json({
+            msg : `There is already a token with the name ${name}`,
+            key : 'DUPLICATE_TOKEN_NAME'
+        });
+    }
 }
 
 /**
@@ -106,7 +111,7 @@ function deployementFileTemplate(tokenName){
  * @param {*} name Name of the token
  * @param {*} symbol Symbol of the token
  * @param {*} tokenAmount The ammount of tokens
- * @returns 
+ * @returns A string with the content of the contract file based on the parameters
  */
 function erc20ContractTemplate(name, symbol, tokenAmount) {
     const contract =
@@ -129,6 +134,7 @@ function erc20ContractTemplate(name, symbol, tokenAmount) {
  * @param {*} tokenName The name of the token being created
  * @param {*} deployementFile The content of the deployement file
  * @param {*} contractFile The content of the contract file
+ * @return True if the operation was completed succesfully, false otherwise
  */
 function createERC20FilesAndDeployContract(tokenName, deployementFile, contractFile) {
     fs.writeFile(path.join(__dirname, '..', 'migrations', '1_deploy_contracts.js'), deployementFile, (err) => {
@@ -138,11 +144,11 @@ function createERC20FilesAndDeployContract(tokenName, deployementFile, contractF
                 `The solidity file for the token ${tokenName} could not be written due to the error shown below`,
                 `${err.message}`)
 
-            return;
+            return false;
         }
         oneLineConsoleMessage(FILE_UPDATE, SUCCESS, `The deployement file in order to deploy the token ${tokenName} was succesfully updated`);
         
-        createContractFile(tokenName, contractFile)
+        return createContractFile(tokenName, contractFile)
     });
 }
 
@@ -150,6 +156,7 @@ function createERC20FilesAndDeployContract(tokenName, deployementFile, contractF
  * Creates the contract file for the Token
  * @param {*} tokenName Name of the token being created
  * @param {*} contractFile Content of the contract file
+ * @return True if the operation was completed succesfully, false otherwise
  */
 function createContractFile(tokenName, contractFile){
     fs.writeFile(path.join(__dirname, '..', 'contracts', `${tokenName}.sol`), contractFile, (err) => {
@@ -159,36 +166,47 @@ function createContractFile(tokenName, contractFile){
                 `The solidity file for the token ${tokenName} could not be created due to the error shown below`,
                 `${err.message}`)
 
-            return;
+            return false;
         }
 
-        // deployContract();
-
         oneLineConsoleMessage(FILE_CREATION, SUCCESS, `The solidity file for the token ${tokenName} was succesfully written`);
+
+        return deployContract(tokenName);
     });
 }
 
 /**
  * Runs the script in order to deploy contracts
+ * @param {*} tokenName Name of the token being created
+ * @return True if the contract was deployed correctly on the network, false otherwise
  */
-function deployContract() {
-    console.log('DEBUG:', '1');
+function deployContract(tokenName) {
     exec("truffle migrate", (error, stdout, stderr) => {
         if (error) {
-            console.log('DEBUG:', '2');
-            console.log(`error: ${error.message}`);
-            console.log('DEBUG:', '3');
-            return;
+            multiLineConsoleMessage(TRUFFLE_MIGRATION,
+                ERROR,
+                `The error shown below ocurred while trying to run 'trufle migrate' command for deploying ` +
+                `the token with the name: ${tokenName}`,
+                `${error}`)
+
+            return false;
         }
         if (stderr) {
-            console.log('DEBUG:', '4');
-            console.log(`stderr: ${stderr}`);
-            console.log('DEBUG:', '5');
-            return;
+            multiLineConsoleMessage(TRUFFLE_MIGRATION,
+                SUCCESS,
+                `The command 'truffle migrations was succesfully runned for deploying the token with the name: ` +
+                `${tokenName} and obtained the shell stream shown below'`,
+                `${stderr}`)
+
+            return true;
         }
-        console.log('DEBUG:', '6');
-        console.log(`stdout: ${stdout}`);
-        console.log('DEBUG:', '7');
+        multiLineConsoleMessage(TRUFFLE_MIGRATION,
+            SUCCESS,
+            `The command 'truffle migrations was succesfully runned for deploying the token with the name: ` +
+            `${tokenName} and obtained the shell output shown below'`,
+            `${stdout}`)
+
+        return true;
     });
 }
 
