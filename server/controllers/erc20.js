@@ -2,7 +2,6 @@ const { request, response } = require( 'express' );
 const { exec } = require( 'child_process' );
 const fs = require( 'fs' );
 const path = require( 'path' );
-const uniqid = require('uniqid'); 
 
 const { FILE_CREATION, FILE_UPDATE, SUCCESS, ERROR, oneLineConsoleMessage, multiLineConsoleMessage } = require('../services/console-events');
 const { pushElementInDatabase } = require('../services/database.js');
@@ -43,6 +42,7 @@ const erc20Put = (req = request, res = response) => {
  * @param {*} res The response from the server
  */
 const erc20Post = (req = request, res = response) => {
+    
     // Request body
     const { name, symbol, tokenAmount } = req.body;
 
