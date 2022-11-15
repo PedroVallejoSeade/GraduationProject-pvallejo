@@ -2,6 +2,7 @@ const { request, response } = require( 'express' );
 const { exec } = require( 'child_process' );
 const fs = require( 'fs' );
 const path = require( 'path' );
+const uniqid = require('uniqid'); 
 
 const { FILE_CREATION, FILE_UPDATE, TRUFFLE_MIGRATION, SUCCESS, ERROR, oneLineConsoleMessage, multiLineConsoleMessage } = require('../services/console-events');
 const { pushElementInDatabase, getDatabase } = require('../services/database.js');
@@ -45,6 +46,7 @@ const erc20Post = (req = request, res = response) => {
     const { name, symbol, tokenAmount } = req.body;
 
     const tokenObj = {
+        id: `${uniqid()}`,
         standard : 'ERC-20',
         name : name,
         symbol : symbol,
@@ -58,19 +60,12 @@ const erc20Post = (req = request, res = response) => {
         const contractFile = erc20ContractTemplate(name, symbol, tokenAmount);
 
         // Creation of the needed files and deployement of contract
-        const succesfulOperation = createERC20FilesAndDeployContract(name, deployementFile, contractFile);
+        createERC20FilesAndDeployContract(tokenObj, deployementFile, contractFile);
 
-        if(succesfulOperation){
-            res.status(201).json({
-                msg : 'Success',
-                key : 'SUCCESS'
-            });
-        } else {
-            res.status(500).json({
-                msg : 'The server could was not able to correctly create the token',
-                key : 'UNKNOWN_PROBLEM'
-            });
-        }
+        res.status(201).json({
+            msg : `The token ${name} was succesfully created in the database`,
+            key : 'SUCCESS'
+        });
     } else {
         res.status(406).json({
             msg : `There is already a token with the name ${name}`,
@@ -139,82 +134,79 @@ function erc20ContractTemplate(name, symbol, tokenAmount) {
 
 /**
  * Creates the deployement and contract files for an ERC-20 token and also deploys the contract created
- * @param {*} tokenName The name of the token being created
+ * @param {*} tokenObj The object of the token being created on the format stored in the DB
  * @param {*} deployementFile The content of the deployement file
  * @param {*} contractFile The content of the contract file
- * @return True if the operation was completed succesfully, false otherwise
  */
-function createERC20FilesAndDeployContract(tokenName, deployementFile, contractFile) {
+function createERC20FilesAndDeployContract(tokenObj, deployementFile, contractFile) {
     fs.writeFile(path.join(__dirname, '..', 'migrations', '1_deploy_contracts.js'), deployementFile, (err) => {
         if (err) {
             multiLineConsoleMessage(FILE_UPDATE,
                 ERROR,
-                `The solidity file for the token ${tokenName} could not be written due to the error shown below`,
-                `${err.message}`)
+                `The solidity file for the token ${tokenObj} could not be written due to the error shown below`,
+                `${err.message}`);
 
-            return false;
+            return ;
         }
-        oneLineConsoleMessage(FILE_UPDATE, SUCCESS, `The deployement file in order to deploy the token ${tokenName} was succesfully updated`);
+        oneLineConsoleMessage(FILE_UPDATE, SUCCESS, `The deployement file in order to deploy the token ${tokenObj} was succesfully updated`);
         
-        return createContractFile(tokenName, contractFile)
+        createContractFile(tokenObj, contractFile);
     });
 }
 
 /**
  * Creates the contract file for the Token
- * @param {*} tokenName Name of the token being created
+ * @param {*} tokenObj The object of the token being created on the format stored in the DB
  * @param {*} contractFile Content of the contract file
  * @return True if the operation was completed succesfully, false otherwise
  */
-function createContractFile(tokenName, contractFile){
+function createContractFile(tokenObj, contractFile){
     fs.writeFile(path.join(__dirname, '..', 'contracts', `${tokenName}.sol`), contractFile, (err) => {
         if (err) {
             multiLineConsoleMessage(FILE_CREATION,
                 ERROR,
                 `The solidity file for the token ${tokenName} could not be created due to the error shown below`,
-                `${err.message}`)
+                `${err.message}`);
 
-            return false;
+            return;
         }
 
         oneLineConsoleMessage(FILE_CREATION, SUCCESS, `The solidity file for the token ${tokenName} was succesfully written`);
 
-        return deployContract(tokenName);
+        deployContract(tokenObj);
     });
 }
 
 /**
  * Runs the script in order to deploy contracts
- * @param {*} tokenName Name of the token being created
+ * @param {*} tokenObj The object of the token being created on the format stored in the DB
  * @return True if the contract was deployed correctly on the network, false otherwise
  */
-function deployContract(tokenName) {
+function deployContract(tokenObj) {
     exec("truffle migrate", (error, stdout, stderr) => {
         if (error) {
             multiLineConsoleMessage(TRUFFLE_MIGRATION,
                 ERROR,
                 `The error shown below ocurred while trying to run 'trufle migrate' command for deploying ` +
-                `the token with the name: ${tokenName}`,
-                `${error}`)
+                `the token with the name: ${tokenObj.name}`,
+                `${error}`);
 
-            return false;
+            return;
         }
         if (stderr) {
             multiLineConsoleMessage(TRUFFLE_MIGRATION,
                 SUCCESS,
                 `The command 'truffle migrations was succesfully runned for deploying the token with the name: ` +
-                `${tokenName} and obtained the shell stream shown below'`,
-                `${stderr}`)
+                `${tokenObj.name} and obtained the shell stream shown below'`,
+                `${stderr}`);
 
-            return true;
+            return;
         }
         multiLineConsoleMessage(TRUFFLE_MIGRATION,
             SUCCESS,
             `The command 'truffle migrations was succesfully runned for deploying the token with the name: ` +
-            `${tokenName} and obtained the shell output shown below'`,
-            `${stdout}`)
-
-        return true;
+            `${tokenObj.name} and obtained the shell output shown below'`,
+            `${stdout}`);
     });
 }
 

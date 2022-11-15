@@ -20,11 +20,11 @@ const setDatabase = (newDatabase) => {
 }
 
 /**
- * Seraches if an element exists already on a database
+ * Seraches if there is an token already in the DB with the same name or symbol
  * @param {*} elemetSearched The element that wants to be searched for an instance in the database
  * @returns The instance of the element searched in the database if found or undefined if not found
  */
-const searchElementOnDatabase = (elemetSearched) => {
+const searchInstanceOfTokenWithSameNameOrSymbol = (elemetSearched) => {
     return database.find(element => (element.name == elemetSearched.name || element.symbol == elemetSearched.symbol));
 }
 
@@ -34,7 +34,7 @@ const searchElementOnDatabase = (elemetSearched) => {
  * @returns True when the new element was succesfully stored or false otherwise
  */
 const pushElementInDatabase = (newElement) => {
-    if(searchElementOnDatabase(newElement)) return false;
+    if(searchInstanceOfTokenWithSameNameOrSymbol(newElement)) return false;
     else {
         database.push(newElement);
         return true
