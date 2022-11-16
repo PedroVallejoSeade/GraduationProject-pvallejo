@@ -195,7 +195,7 @@ function createContractFile(tokenObj, contractFile){
 
         oneLineConsoleMessage(FILE_CREATION, SUCCESS, `The solidity file for the token ${tokenObj.name} was succesfully written`);
 
-        deployContract(tokenObj);
+        // deployContract(tokenObj);
     });
 }
 
