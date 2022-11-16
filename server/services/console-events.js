@@ -6,7 +6,10 @@
 
 const FILE_CREATION = 'FILE-CREATION';
 const FILE_UPDATE = 'FILE-UPDATE';
-const TRUFFLE_MIGRATION = 'TRUFFLE-MIGRATION'
+const TRUFFLE_MIGRATION = 'TRUFFLE-MIGRATION';
+const ELEMENT_ADDED_TO_DB = 'ELEMENT-ADDED-TO-DB';
+const ELEMENT_UPDATED_FROM_DB = 'ELEMENT-UPDATED-FROM-DB';
+const ELEMENT_DELETED_FROM_DB = 'ELEMENT-DELETED-FROM-DB';
 
 /**
  * --------------------------------------------------------------------------------
@@ -47,6 +50,9 @@ module.exports = {
     FILE_CREATION,
     FILE_UPDATE,
     TRUFFLE_MIGRATION,
+    ELEMENT_ADDED_TO_DB,
+    ELEMENT_UPDATED_FROM_DB,
+    ELEMENT_DELETED_FROM_DB,
 
     // Event types constants
     SUCCESS,

@@ -2,9 +2,10 @@ const { request, response } = require( 'express' );
 const { exec } = require( 'child_process' );
 const fs = require( 'fs' );
 const path = require( 'path' );
+const uniqid = require('uniqid'); 
 
-const { FILE_CREATION, FILE_UPDATE, TRUFFLE_MIGRATION, SUCCESS, ERROR, oneLineConsoleMessage, multiLineConsoleMessage } = require('../services/console-events');
-const { pushElementInDatabase } = require('../services/database.js');
+const { FILE_CREATION, FILE_UPDATE, TRUFFLE_MIGRATION, ELEMENT_ADDED_TO_DB, ELEMENT_DELETED_FROM_DB, ELEMENT_UPDATED_FROM_DB, SUCCESS, ERROR, oneLineConsoleMessage, multiLineConsoleMessage } = require('../services/console-events');
+const { getDatabase, pushElementInDatabase, deleteTokenById, deployContractOfAnElementById } = require('../services/database.js');
 
 /**
  * --------------------------------------------------------------------------------
@@ -18,8 +19,6 @@ const { pushElementInDatabase } = require('../services/database.js');
  * @param {*} res Response object
  */
 const erc20Get = (req = request, res = response) => {
-    deployContract();
-
     res.json({
         msg : 'get API - controller'
     });
@@ -46,31 +45,40 @@ const erc20Post = (req = request, res = response) => {
     // Request body
     const { name, symbol, tokenAmount } = req.body;
 
-    if(pushElementInDatabase(name)){
+    const tokenObj = {
+        id: `${uniqid()}`,
+        standard : 'ERC-20',
+        name : name,
+        symbol : symbol,
+        amount : tokenAmount,
+        contractDeployed : false
+    }
+
+    if(pushElementInDatabase(tokenObj)){
+        oneLineConsoleMessage(ELEMENT_ADDED_TO_DB, SUCCESS, `The token ${name} has been succesfully added to the DB`);
+
         // Templates needed for deployement and contract creation
         const deployementFile = deployementFileTemplate(name);
         const contractFile = erc20ContractTemplate(name, symbol, tokenAmount);
 
         // Creation of the needed files and deployement of contract
-        const succesfulOperation = createERC20FilesAndDeployContract(name, deployementFile, contractFile);
+        createERC20FilesAndDeployContract(tokenObj, deployementFile, contractFile);
 
-        if(succesfulOperation){
-            res.status(201).json({
-                msg : 'Success',
-                key : 'SUCCESS'
-            });
-        } else {
-            res.status(500).json({
-                msg : 'The server could was not able to correctly create the token',
-                key : 'UNKNOWN_PROBLEM'
-            });
-        }
+        res.status(201).json({
+            msg : `The token ${name} was succesfully created in the database`,
+            key : 'SUCCESS'
+        });
     } else {
+        oneLineConsoleMessage(ELEMENT_ADDED_TO_DB, ERROR, `The token ${name} could not be added to the DB because there is `+ 
+        `already a token with the name ${name} or the symbol ${symbol}`);
+
         res.status(406).json({
             msg : `There is already a token with the name ${name}`,
-            key : 'DUPLICATE_TOKEN_NAME'
+            key : 'DUPLICATE_TOKEN'
         });
     }
+
+    console.log(getDatabase());
 }
 
 /**
@@ -131,82 +139,120 @@ function erc20ContractTemplate(name, symbol, tokenAmount) {
 
 /**
  * Creates the deployement and contract files for an ERC-20 token and also deploys the contract created
- * @param {*} tokenName The name of the token being created
+ * @param {*} tokenObj The object of the token being created on the format stored in the DB
  * @param {*} deployementFile The content of the deployement file
  * @param {*} contractFile The content of the contract file
- * @return True if the operation was completed succesfully, false otherwise
  */
-function createERC20FilesAndDeployContract(tokenName, deployementFile, contractFile) {
+function createERC20FilesAndDeployContract(tokenObj, deployementFile, contractFile) {
     fs.writeFile(path.join(__dirname, '..', 'migrations', '1_deploy_contracts.js'), deployementFile, (err) => {
         if (err) {
             multiLineConsoleMessage(FILE_UPDATE,
                 ERROR,
-                `The solidity file for the token ${tokenName} could not be written due to the error shown below`,
-                `${err.message}`)
+                `The solidity file for the token ${tokenObj} could not be written due to the error shown below`,
+                `${err.message}`);
 
-            return false;
+            if(deleteTokenById(tokenObj.id)){
+                oneLineConsoleMessage(ELEMENT_DELETED_FROM_DB, SUCCESS, `The token ${tokenObj.name} ` +
+                `has succesfully been deleted from the database due to an error writing the deployment file for the token`);
+            } else {
+                oneLineConsoleMessage(ELEMENT_DELETED_FROM_DB, ERROR, `The token ${tokenObj.name} could not be deleted from the DB ` +
+                `when an error writting the deployment file for the token occurred`);
+            }
+
+            return ;
         }
-        oneLineConsoleMessage(FILE_UPDATE, SUCCESS, `The deployement file in order to deploy the token ${tokenName} was succesfully updated`);
+        oneLineConsoleMessage(FILE_UPDATE, SUCCESS, `The deployement file in order to deploy the token ${tokenObj.name} ` + 
+        `was succesfully updated`);
         
-        return createContractFile(tokenName, contractFile)
+        createContractFile(tokenObj, contractFile);
     });
 }
 
 /**
  * Creates the contract file for the Token
- * @param {*} tokenName Name of the token being created
+ * @param {*} tokenObj The object of the token being created on the format stored in the DB
  * @param {*} contractFile Content of the contract file
  * @return True if the operation was completed succesfully, false otherwise
  */
-function createContractFile(tokenName, contractFile){
-    fs.writeFile(path.join(__dirname, '..', 'contracts', `${tokenName}.sol`), contractFile, (err) => {
+function createContractFile(tokenObj, contractFile){
+    fs.writeFile(path.join(__dirname, '..', 'contracts', `${tokenObj.name}.sol`), contractFile, (err) => {
         if (err) {
             multiLineConsoleMessage(FILE_CREATION,
                 ERROR,
-                `The solidity file for the token ${tokenName} could not be created due to the error shown below`,
-                `${err.message}`)
+                `The solidity file for the token ${tokenObj.name} could not be created due to the error shown below`,
+                `${err.message}`);
 
-            return false;
+            if(deleteTokenById(tokenObj.id)){
+                oneLineConsoleMessage(ELEMENT_DELETED_FROM_DB, SUCCESS, `The token ${tokenObj.name} ` +
+                `has succesfully been deleted from the database due to an error writing the contract file for the token`);
+            } else {
+                oneLineConsoleMessage(ELEMENT_DELETED_FROM_DB, ERROR, `The token ${tokenObj.name} could not be deleted from the DB ` +
+                `when an error writting the contract file for the token occurred`);
+            }
+
+            return;
         }
 
-        oneLineConsoleMessage(FILE_CREATION, SUCCESS, `The solidity file for the token ${tokenName} was succesfully written`);
+        oneLineConsoleMessage(FILE_CREATION, SUCCESS, `The solidity file for the token ${tokenObj.name} was succesfully written`);
 
-        return deployContract(tokenName);
+        deployContract(tokenObj);
     });
 }
 
 /**
  * Runs the script in order to deploy contracts
- * @param {*} tokenName Name of the token being created
+ * @param {*} tokenObj The object of the token being created on the format stored in the DB
  * @return True if the contract was deployed correctly on the network, false otherwise
  */
-function deployContract(tokenName) {
+function deployContract(tokenObj) {
     exec("truffle migrate", (error, stdout, stderr) => {
         if (error) {
             multiLineConsoleMessage(TRUFFLE_MIGRATION,
                 ERROR,
                 `The error shown below ocurred while trying to run 'trufle migrate' command for deploying ` +
-                `the token with the name: ${tokenName}`,
-                `${error}`)
+                `the token with the name: ${tokenObj.name}`,
+                `${error}`);
 
-            return false;
+            if(deleteTokenById(tokenObj.id)){
+                oneLineConsoleMessage(ELEMENT_DELETED_FROM_DB, SUCCESS, `The token ${tokenObj.name} ` +
+                `has succesfully been deleted from the database due to an error running 'truffle migrate' command`);
+            } else {
+                oneLineConsoleMessage(ELEMENT_DELETED_FROM_DB, ERROR, `The token ${tokenObj.name} could not be deleted from the DB ` +
+                `when an error running 'truffle migrate' command occurred`);
+            }
+
+            return;
         }
         if (stderr) {
             multiLineConsoleMessage(TRUFFLE_MIGRATION,
                 SUCCESS,
                 `The command 'truffle migrations was succesfully runned for deploying the token with the name: ` +
-                `${tokenName} and obtained the shell stream shown below'`,
-                `${stderr}`)
+                `${tokenObj.name} and obtained the shell stream shown below'`,
+                `${stderr}`);
+            
+            if(deployContractOfAnElementById(tokenObj.id)){
+                oneLineConsoleMessage(ELEMENT_UPDATED_FROM_DB, SUCCESS, `The token ${tokenObj.name} ` +
+                `has succesfully updated its contractDeployed property due to a succesfull deployement of the contract`);
+            } else {
+                oneLineConsoleMessage(ELEMENT_UPDATED_FROM_DB, ERROR, `The token ${tokenObj.name} ` +
+                `could not update its contractDeployed property due to a succesfull deployement of the contract`);
+            }
 
-            return true;
+            return;
         }
         multiLineConsoleMessage(TRUFFLE_MIGRATION,
             SUCCESS,
             `The command 'truffle migrations was succesfully runned for deploying the token with the name: ` +
-            `${tokenName} and obtained the shell output shown below'`,
-            `${stdout}`)
+            `${tokenObj.name} and obtained the shell output shown below'`,
+            `${stdout}`);
 
-        return true;
+        if(deployContractOfAnElementById(tokenObj.id)){
+            oneLineConsoleMessage(ELEMENT_UPDATED_FROM_DB, SUCCESS, `The token ${tokenObj.name} ` +
+            `has succesfully updated its contractDeployed property due to a succesfull deployement of the contract`);
+        } else {
+            oneLineConsoleMessage(ELEMENT_UPDATED_FROM_DB, ERROR, `The token ${tokenObj.name} ` +
+            `could not update its contractDeployed property due to a succesfull deployement of the contract`);
+        }
     });
 }
 
