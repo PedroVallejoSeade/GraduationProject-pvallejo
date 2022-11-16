@@ -12,6 +12,41 @@ const getDatabase = () => {
 }
 
 /**
+ * Removes token from the DB based on the id of the token
+ * @param {*} id ID of the token that wants to be deleted from the DB
+ * @returns True if an object was deleted and false otherwise
+ */
+const deleteTokenById = (id) => {    
+    for( var i = 0; i < database.length; i++){ 
+        if ( database[i].id === id) {
+            arr.splice(i, 1);
+            
+            return true;
+        }
+    }
+
+    return false;
+}
+
+
+/**
+ * Registeres that a token's contract has been deployed
+ * @param {*} id ID of the token whose contract has been deployed
+ * @returns True if the database objec was updated succesfully, and false otherwise
+ */
+const deployContractOfAnElementById = (id) => {
+    for( var i = 0; i < database.length; i++){ 
+        if ( database[i].id === id) {
+            database[i].contractDeployed = true;
+            
+            return true;
+        }
+    }
+
+    return false;
+}
+
+/**
  * Function for setting a new database
  * @param {*} newDatabase New values for the database
  */
@@ -44,5 +79,7 @@ const pushElementInDatabase = (newElement) => {
 module.exports = {
     getDatabase,
     setDatabase,
-    pushElementInDatabase
+    pushElementInDatabase,
+    deleteTokenById,
+    deployContractOfAnElementById
 }
