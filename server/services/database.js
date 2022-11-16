@@ -19,7 +19,7 @@ const getDatabase = () => {
 const deleteTokenById = (id) => {    
     for( var i = 0; i < database.length; i++){ 
         if ( database[i].id === id) {
-            arr.splice(i, 1);
+            database.splice(i, 1);
             
             return true;
         }
