@@ -19,9 +19,7 @@ const { getDatabase, pushElementInDatabase, deleteTokenById, deployContractOfAnE
  * @param {*} res Response object
  */
 const erc20Get = (req = request, res = response) => {
-    res.json({
-        msg : 'get API - controller'
-    });
+    res.json(getDatabase());
 }
 
 /**
@@ -43,7 +41,7 @@ const erc20Put = (req = request, res = response) => {
 const erc20Post = (req = request, res = response) => {
     
     // Request body
-    const { name, symbol, tokenAmount } = req.body;
+    const { name, symbol, tokenAmount, address } = req.body;
 
     const tokenObj = {
         id: `${uniqid()}`,
@@ -59,7 +57,7 @@ const erc20Post = (req = request, res = response) => {
 
         // Templates needed for deployement and contract creation
         const deployementFile = deployementFileTemplate(name);
-        const contractFile = erc20ContractTemplate(name, symbol, tokenAmount);
+        const contractFile = erc20ContractTemplate(name, symbol, tokenAmount, address);
 
         // Creation of the needed files and deployement of contract
         createERC20FilesAndDeployContract(tokenObj, deployementFile, contractFile);
@@ -121,7 +119,7 @@ function deployementFileTemplate(tokenName){
  * @param {*} tokenAmount The ammount of tokens
  * @returns A string with the content of the contract file based on the parameters
  */
-function erc20ContractTemplate(name, symbol, tokenAmount) {
+function erc20ContractTemplate(name, symbol, tokenAmount, address) {
     const contract =
     `// SPDX-License-Identifier: MIT\n` +
     `pragma solidity ^0.8.9;\n` +
@@ -130,7 +128,7 @@ function erc20ContractTemplate(name, symbol, tokenAmount) {
     `\n` +
     `contract ${name} is ERC20 {\n` +
     `    constructor() ERC20("${name}", "${symbol}") {\n` +
-    `        _mint(msg.sender, ${tokenAmount} * 10 ** decimals());\n` +
+    `        _mint(${address}, ${tokenAmount} * 10 ** decimals());\n` +
     `    }\n` +
     `}`;
 
@@ -195,7 +193,7 @@ function createContractFile(tokenObj, contractFile){
 
         oneLineConsoleMessage(FILE_CREATION, SUCCESS, `The solidity file for the token ${tokenObj.name} was succesfully written`);
 
-        // deployContract(tokenObj);
+        deployContract(tokenObj);
     });
 }
 
