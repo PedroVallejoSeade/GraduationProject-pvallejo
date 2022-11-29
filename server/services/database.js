@@ -30,14 +30,18 @@ const deleteTokenById = (id) => {
 
 
 /**
- * Registeres that a token's contract has been deployed
+ * Registeres that a token's contract has been deployed by updating the contract's address
  * @param {*} id ID of the token whose contract has been deployed
+ * @param {*} tokenName The name of the token
  * @returns True if the database objec was updated succesfully, and false otherwise
  */
-const deployContractOfAnElementById = (id) => {
+const deployContractOfAnElementById = (id, tokenName) => {
+    const tokenJson = require(`../build/contracts/${tokenName}.json`);
+    const tokenAddress = tokenJson.networks[5777].address;
+    
     for( var i = 0; i < database.length; i++){ 
         if ( database[i].id === id) {
-            database[i].contractDeployed = true;
+            database[i].contractAdress = tokenAddress;
             
             return true;
         }

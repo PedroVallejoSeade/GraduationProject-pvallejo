@@ -41,7 +41,7 @@ const erc20Put = (req = request, res = response) => {
 const erc20Post = (req = request, res = response) => {
     
     // Request body
-    const { name, symbol, tokenAmount, address } = req.body;
+    const { name, symbol, tokenAmount, ownerAddress } = req.body;
 
     const tokenObj = {
         id: `${uniqid()}`,
@@ -49,7 +49,7 @@ const erc20Post = (req = request, res = response) => {
         name : name,
         symbol : symbol,
         amount : tokenAmount,
-        contractDeployed : false
+        contractAdress : '0' // The contract address is 0 when the contract has not been deployed
     }
 
     if(pushElementInDatabase(tokenObj)){
@@ -57,7 +57,7 @@ const erc20Post = (req = request, res = response) => {
 
         // Templates needed for deployement and contract creation
         const deployementFile = deployementFileTemplate(name);
-        const contractFile = erc20ContractTemplate(name, symbol, tokenAmount, address);
+        const contractFile = erc20ContractTemplate(name, symbol, tokenAmount, ownerAddress);
 
         // Creation of the needed files and deployement of contract
         createERC20FilesAndDeployContract(tokenObj, deployementFile, contractFile);
@@ -117,9 +117,10 @@ function deployementFileTemplate(tokenName){
  * @param {*} name Name of the token
  * @param {*} symbol Symbol of the token
  * @param {*} tokenAmount The ammount of tokens
+ * @param {*} ownerAddress The address of the token owner's wallet
  * @returns A string with the content of the contract file based on the parameters
  */
-function erc20ContractTemplate(name, symbol, tokenAmount, address) {
+function erc20ContractTemplate(name, symbol, tokenAmount, ownerAddress) {
     const contract =
     `// SPDX-License-Identifier: MIT\n` +
     `pragma solidity ^0.8.9;\n` +
@@ -128,7 +129,7 @@ function erc20ContractTemplate(name, symbol, tokenAmount, address) {
     `\n` +
     `contract ${name} is ERC20 {\n` +
     `    constructor() ERC20("${name}", "${symbol}") {\n` +
-    `        _mint(${address}, ${tokenAmount} * 10 ** decimals());\n` +
+    `        _mint(${ownerAddress}, ${tokenAmount} * 10 ** decimals());\n` +
     `    }\n` +
     `}`;
 
@@ -228,7 +229,7 @@ function deployContract(tokenObj) {
                 `${tokenObj.name} and obtained the shell stream shown below'`,
                 `${stderr}`);
             
-            if(deployContractOfAnElementById(tokenObj.id)){
+            if(deployContractOfAnElementById(tokenObj.id, tokenObj.name)){
                 oneLineConsoleMessage(ELEMENT_UPDATED_FROM_DB, SUCCESS, `The token ${tokenObj.name} ` +
                 `has succesfully updated its contractDeployed property due to a succesfull deployement of the contract`);
             } else {
@@ -244,7 +245,7 @@ function deployContract(tokenObj) {
             `${tokenObj.name} and obtained the shell output shown below'`,
             `${stdout}`);
 
-        if(deployContractOfAnElementById(tokenObj.id)){
+        if(deployContractOfAnElementById(tokenObj.id, tokenObj.name)){
             oneLineConsoleMessage(ELEMENT_UPDATED_FROM_DB, SUCCESS, `The token ${tokenObj.name} ` +
             `has succesfully updated its contractDeployed property due to a succesfull deployement of the contract`);
         } else {
