@@ -204,7 +204,7 @@ function createContractFile(tokenObj, contractFile){
  * @return True if the contract was deployed correctly on the network, false otherwise
  */
 function deployContract(tokenObj) {
-    exec("truffle migrate", (error, stdout, stderr) => {
+    exec("truffle migrate --network goerli_infura", (error, stdout, stderr) => {
         if (error) {
             multiLineConsoleMessage(TRUFFLE_MIGRATION,
                 ERROR,
@@ -231,10 +231,10 @@ function deployContract(tokenObj) {
             
             if(deployContractOfAnElementById(tokenObj.id, tokenObj.name)){
                 oneLineConsoleMessage(ELEMENT_UPDATED_FROM_DB, SUCCESS, `The token ${tokenObj.name} ` +
-                `has succesfully updated its contractDeployed property due to a succesfull deployement of the contract`);
+                `has succesfully updated its contractAdress property due to a succesfull deployement of the contract`);
             } else {
                 oneLineConsoleMessage(ELEMENT_UPDATED_FROM_DB, ERROR, `The token ${tokenObj.name} ` +
-                `could not update its contractDeployed property due to a succesfull deployement of the contract`);
+                `could not update its contractAdress property due to a succesfull deployement of the contract`);
             }
 
             return;
@@ -247,10 +247,10 @@ function deployContract(tokenObj) {
 
         if(deployContractOfAnElementById(tokenObj.id, tokenObj.name)){
             oneLineConsoleMessage(ELEMENT_UPDATED_FROM_DB, SUCCESS, `The token ${tokenObj.name} ` +
-            `has succesfully updated its contractDeployed property due to a succesfull deployement of the contract`);
+            `has succesfully updated its contractAdress property due to a succesfull deployement of the contract`);
         } else {
             oneLineConsoleMessage(ELEMENT_UPDATED_FROM_DB, ERROR, `The token ${tokenObj.name} ` +
-            `could not update its contractDeployed property due to a succesfull deployement of the contract`);
+            `could not update its contractAdress property due to a succesfull deployement of the contract`);
         }
     });
 }

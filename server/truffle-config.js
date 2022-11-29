@@ -42,7 +42,7 @@
  */
 
 require('dotenv').config();
-const { MNEMONIC } = process.env;
+const { MNEMONIC, INFURA_API_KEY } = process.env;
 const AccountIndex = 0;
 
 const HDWalletProvider = require('@truffle/hdwallet-provider');
@@ -75,6 +75,12 @@ module.exports = {
         return new HDWalletProvider(MNEMONIC, 'http://127.0.0.1:7545', AccountIndex)
       },
       network_id: 5777
+    },
+    goerli_infura:{
+      provider: function(){
+        return new HDWalletProvider(MNEMONIC, `https://goerli.infura.io/v3/${INFURA_API_KEY}`, AccountIndex)
+      },
+      network_id: 5
     },
     //
     // An additional network, but with some advanced options…

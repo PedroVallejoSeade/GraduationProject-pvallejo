@@ -37,7 +37,7 @@ const deleteTokenById = (id) => {
  */
 const deployContractOfAnElementById = (id, tokenName) => {
     const tokenJson = require(`../build/contracts/${tokenName}.json`);
-    const tokenAddress = tokenJson.networks[5777].address;
+    const tokenAddress = tokenJson.networks[5].address;
     
     for( var i = 0; i < database.length; i++){ 
         if ( database[i].id === id) {
