@@ -4,7 +4,7 @@ const { erc20Get, erc20Put, erc20Post, erc20Delete } = require('../controllers/e
 
 const router = Router();
 
-router.get('/', erc20Get );
+router.get('/:id', erc20Get );
 
 router.put('/', erc20Put );
 
