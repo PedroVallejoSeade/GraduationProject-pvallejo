@@ -5,7 +5,7 @@ const path = require( 'path' );
 const uniqid = require('uniqid'); 
 
 const { FILE_CREATION, FILE_UPDATE, TRUFFLE_MIGRATION, ELEMENT_ADDED_TO_DB, ELEMENT_DELETED_FROM_DB, ELEMENT_UPDATED_FROM_DB, SUCCESS, ERROR, oneLineConsoleMessage, multiLineConsoleMessage } = require('../services/console-events');
-const { getDatabase, pushElementInDatabase, deleteTokenById, deployContractOfAnElementById } = require('../services/database.js');
+const { findTokenById, pushElementInDatabase, deleteTokenById, deployContractOfAnElementById } = require('../services/database.js');
 
 /**
  * --------------------------------------------------------------------------------
@@ -14,12 +14,22 @@ const { getDatabase, pushElementInDatabase, deleteTokenById, deployContractOfAnE
  */
 
 /**
- * Controller function for a get request [CURRENTLY HAS NO USE]
+ * Controller function for a get request
  * @param {*} req Request object
  * @param {*} res Response object
  */
 const erc20Get = (req = request, res = response) => {
-    res.json(getDatabase());
+    const { id } = req.params;
+
+    const token = findTokenById(id);
+    
+    if(token){
+        res.status(200).json(token);
+    } else {
+        res.status(404).json({
+            msg : `Token with id ${id} was not found`
+        });
+    }
 }
 
 /**
@@ -39,7 +49,8 @@ const erc20Put = (req = request, res = response) => {
  * @param {*} res The response from the server
  */
 const erc20Post = (req = request, res = response) => {
-    
+    start = +new Date();
+
     // Request body
     const { name, symbol, tokenAmount, ownerAddress } = req.body;
 
@@ -62,10 +73,7 @@ const erc20Post = (req = request, res = response) => {
         // Creation of the needed files and deployement of contract
         createERC20FilesAndDeployContract(tokenObj, deployementFile, contractFile);
 
-        res.status(201).json({
-            msg : `The token ${name} was succesfully created in the database`,
-            key : 'SUCCESS'
-        });
+        res.status(201).json(tokenObj);
     } else {
         oneLineConsoleMessage(ELEMENT_ADDED_TO_DB, ERROR, `The token ${name} could not be added to the DB because there is `+ 
         `already a token with the name ${name} or the symbol ${symbol}`);
@@ -75,8 +83,6 @@ const erc20Post = (req = request, res = response) => {
             key : 'DUPLICATE_TOKEN'
         });
     }
-
-    console.log(getDatabase());
 }
 
 /**
@@ -248,6 +254,7 @@ function deployContract(tokenObj) {
         if(deployContractOfAnElementById(tokenObj.id, tokenObj.name)){
             oneLineConsoleMessage(ELEMENT_UPDATED_FROM_DB, SUCCESS, `The token ${tokenObj.name} ` +
             `has succesfully updated its contractAdress property due to a succesfull deployement of the contract`);
+
         } else {
             oneLineConsoleMessage(ELEMENT_UPDATED_FROM_DB, ERROR, `The token ${tokenObj.name} ` +
             `could not update its contractAdress property due to a succesfull deployement of the contract`);

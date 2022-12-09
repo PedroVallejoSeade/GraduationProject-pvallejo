@@ -13,13 +13,6 @@ const expect = chai.expect;
 contract("Token Test", async (accounts) => {
     const [deployerAccount, recepient, anotherAccount] = accounts;
 
-    it("all tokens should be on the account that deployed them", async() => {
-        let instance = await MyToken.deployed();
-        let totalSupply = await instance.totalSupply();
-
-        expect(await instance.balanceOf(accounts[0])).to.be.a.bignumber.equal(totalSupply);
-    })
-
     it("is not possible to send more tokens than available in total", async() =>{
         let instance = await MyToken.deployed();
         let balanceOfDeployer = await instance.balanceOf(deployerAccount);

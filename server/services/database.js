@@ -28,6 +28,15 @@ const deleteTokenById = (id) => {
     return false;
 }
 
+/**
+ * Finds a token instance in the DB by its id
+ * @param {*} id ID of the token that wants to be found
+ * @returns The instance of the element searched in the database if found or undefined if not found
+ */
+ const findTokenById = (id) => {    
+    return database.find(element => (element.id == id ));
+}
+
 
 /**
  * Registeres that a token's contract has been deployed by updating the contract's address
@@ -85,5 +94,6 @@ module.exports = {
     setDatabase,
     pushElementInDatabase,
     deleteTokenById,
-    deployContractOfAnElementById
+    deployContractOfAnElementById,
+    findTokenById
 }
